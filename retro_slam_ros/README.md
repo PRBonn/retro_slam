@@ -26,7 +26,7 @@ This will dump the current state of the global map and optimized poses to the di
 ros2 service call /save_global_map example_interfaces/srv/Trigger \{\}
 ```
 
-### Exit the mapping node graciously and save global map and metadata to disk 
+### Exit the mapping node graciously and save global map and metadata to disk
 
 This will create the final local map and query for loop closures, optimize the pose graph if any loop closures are found, and then dump the global map and optimized poses to the disk in a folder `retro_slam_results/<system_timestamp>`
 ```
