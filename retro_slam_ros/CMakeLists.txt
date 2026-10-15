@@ -28,6 +28,9 @@ endif()
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+# Build
+find_package(ament_cmake REQUIRED)
+
 if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/../cpp/ AND NOT IS_SYMLINK ${CMAKE_CURRENT_SOURCE_DIR})
   message(STATUS "FOUND RETRO-SLAM in source tree, using it instead of fetching from Github")
   add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../cpp ${CMAKE_CURRENT_BINARY_DIR}/retro_slam)
@@ -38,9 +41,6 @@ else()
                        GIT_TAG main SOURCE_SUBDIR cpp/)
   FetchContent_MakeAvailable(ext_retro_slam_core)
 endif()
-
-# Build
-find_package(ament_cmake REQUIRED)
 
 # Core ROS
 find_package(rclcpp REQUIRED)
