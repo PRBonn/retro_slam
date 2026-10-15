@@ -32,7 +32,6 @@
 #include "kiss_icp/pipeline/KissICP.hpp"
 #include "pointcloud_utils.hpp"
 #include "retro_slam/retro_slam.hpp"
-#include "retro_slam/runtime_profiler.hpp"
 #include "retro_slam/voxel_map.hpp"
 #include "utils.hpp"
 
@@ -116,15 +115,11 @@ MappingNode::MappingNode(const rclcpp::NodeOptions &options)
     oss << std::put_time(&tm, "retro_slam_results/%Y-%m-%d_%H-%M-%S");
     output_dir_ = oss.str();
     std::filesystem::create_directories(output_dir_);
-    // Create a symlink to output_dir_
     const std::filesystem::path symlink_path = "retro_slam_results/latest";
     if (std::filesystem::is_symlink(std::filesystem::symlink_status(symlink_path))) {
         std::filesystem::remove(symlink_path);
     }
     std::filesystem::create_directory_symlink(output_dir_.filename(), symlink_path);
-
-    const std::string profiler_path = output_dir_ / "runtime_profile_backend.json";
-    retro_slam::profiler::RuntimeProfiler::Instance().SetDefaultPath(profiler_path);
 
     RCLCPP_INFO(get_logger(), "Retro-SLAM ROS 2 local mapper node initialized");
 }
@@ -225,7 +220,6 @@ void MappingNode::InitializeServices() {
 
 void MappingNode::ResetSubmapState() {
     RCLCPP_DEBUG(get_logger(), "Generating new submap: current_submap_id=%d", current_submap_id_);
-
     const auto retained_points = submap_voxel_grid_->PointsWithinRadiusFromLocation(
         submap_T_scan_.translation(), slam_config_.odometry.max_range);
     submap_voxel_grid_->Clear();
@@ -243,7 +237,6 @@ void MappingNode::ResetSubmapState() {
 void MappingNode::GenerateLocalMapSplit() {
     RCLCPP_DEBUG(get_logger(), "Generating new local map: localmap_id=%d",
                  local_map_data_.localmap_id);
-
     local_map_data_.pointcloud = local_map_voxel_grid_->Pointcloud();
     auto [voxel_means, voxel_normals] = local_map_voxel_grid_->PerVoxelMeanAndNormal();
     local_map_data_.voxel_means = std::move(voxel_means);
@@ -286,7 +279,6 @@ void MappingNode::FinalizeAndQueueRemainingLocalMapData() {
 
 void MappingNode::OdometryCallback(const nav_msgs::msg::Odometry::ConstSharedPtr &odom_msg,
                                    const sensor_msgs::msg::PointCloud2::ConstSharedPtr &scan_msg) {
-    retro_slam::profiler::ScopedTimer timer_total("retro_slam.MappingNode.OdometryCallback.total");
     Eigen::fromMsg(odom_msg->pose.pose, latest_odom_T_scan_);
     ros_pointcloud2_to_vector_of_eigen(*scan_msg, default_schema_xyz, latest_deskewed_scan_);
 
@@ -311,7 +303,6 @@ void MappingNode::OdometryCallback(const nav_msgs::msg::Odometry::ConstSharedPtr
         GenerateLocalMapSplit();
         QueueCurrentLocalMapDataForSLAM();
     }
-    timer_total.end();
 }
 
 void MappingNode::SLAMWorkerThread() {
@@ -335,7 +326,6 @@ void MappingNode::SLAMWorkerThread() {
 }
 
 void MappingNode::ProcessLocalMap(const LocalMapData &local_map_data) {
-    retro_slam::profiler::ScopedTimer timer_total("retro_slam.MappingNode.ProcessLocalMap.total");
     const int localmap_id = local_map_data.localmap_id;
     RCLCPP_INFO(get_logger(), "Processing Local Map %d", localmap_id);
     {
@@ -354,7 +344,6 @@ void MappingNode::ProcessLocalMap(const LocalMapData &local_map_data) {
         }
         global_map_needs_update_ = true;
     }
-    timer_total.end();
     RCLCPP_INFO(get_logger(), "Processed Local Map %d", localmap_id);
 }
 
@@ -444,7 +433,6 @@ int main(int argc, char **argv) {
     rclcpp::executors::MultiThreadedExecutor executor(rclcpp::ExecutorOptions(), 2);
     executor.add_node(node);
     executor.spin();
-    retro_slam::profiler::RuntimeProfiler::Instance().FlushToDefault();
     rclcpp::shutdown();
     return 0;
 }

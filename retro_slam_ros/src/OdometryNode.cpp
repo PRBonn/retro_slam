@@ -28,7 +28,6 @@
 
 #include "kiss_icp/pipeline/KissICP.hpp"
 #include "pointcloud_utils.hpp"
-#include "retro_slam/runtime_profiler.hpp"
 #include "utils.hpp"
 
 // ROS 2 headers
@@ -53,9 +52,6 @@ using utils::LookupTransform;
 namespace retro_slam_ros {
 OdometryNode::OdometryNode(const rclcpp::NodeOptions &options)
     : rclcpp::Node("odometry_node", options) {
-    const std::string profiler_path = "retro_slam_results/latest/runtime_profile_frontend.json";
-    retro_slam::profiler::RuntimeProfiler::Instance().SetDefaultPath(profiler_path);
-
     odom_frame_ = declare_parameter<std::string>("lidar_odom_frame", odom_frame_);
     base_frame_ = declare_parameter<std::string>("base_frame", base_frame_);
 
@@ -123,7 +119,6 @@ void OdometryNode::InitializeTF2() {
 
 void OdometryNode::RegisterFrame(
     const sensor_msgs::msg::PointCloud2::ConstSharedPtr &pointcloud_msg) {
-    retro_slam::profiler::ScopedTimer timer_total("retro_slam.OdometryNode.RegisterFrame.total");
     const std::string lidar_frame_id = pointcloud_msg->header.frame_id;
     const auto egocentric_estimation = (base_frame_.empty() || base_frame_ == lidar_frame_id);
     const auto moving_frame = egocentric_estimation ? lidar_frame_id : base_frame_;
@@ -139,10 +134,8 @@ void OdometryNode::RegisterFrame(
     ros_pointcloud2_to_vector_of_eigen(*pointcloud_msg, pointfield_schema, latest_scan_,
                                        base_frame_T_lidar_frame_);
     get_timestamps(*pointcloud_msg, pointfield_schema, latest_timestamps_);
-    retro_slam::profiler::ScopedTimer timer_kiss("retro_slam.OdometryNode.RegisterFrame.kiss_icp");
     const auto &[deskewed_frame, _] =
         kiss_icp_pipeline_->RegisterFrame(latest_scan_, latest_timestamps_);
-    timer_kiss.end();
 
     std_msgs::msg::Header header;
     header.stamp = pointcloud_msg->header.stamp;
@@ -151,7 +144,6 @@ void OdometryNode::RegisterFrame(
     const Eigen::Matrix<double, 6, 6> &hessian = kiss_icp_pipeline_->hessian();
     PublishRegistrationData(header, pose, hessian);
     deskewed_frame_publisher_->publish(vector_of_eigen_to_ros_pointcloud2(header, deskewed_frame));
-    timer_total.end();
 }
 
 void OdometryNode::PublishRegistrationData(const std_msgs::msg::Header &header,
@@ -179,7 +171,6 @@ int main(int argc, char **argv) {
     auto odometry_node = std::make_shared<retro_slam_ros::OdometryNode>(rclcpp::NodeOptions());
     executor.add_node(odometry_node);
     executor.spin();
-    retro_slam::profiler::RuntimeProfiler::Instance().FlushToDefault();
     rclcpp::shutdown();
     return 0;
 }

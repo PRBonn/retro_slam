@@ -33,7 +33,6 @@
 #include <vector>
 
 #include "RetroSlamConfig.h"
-#include "runtime_profiler.hpp"
 #include "submap_graph.hpp"
 
 namespace {
@@ -56,7 +55,6 @@ std::vector<Eigen::Isometry3d> ComputeLocalmapTrajectory(
 inline double ComputeHausdorffDistance(const std::vector<Eigen::Isometry3d> &source_traj,
                                        const std::vector<Eigen::Isometry3d> &target_traj,
                                        const double max_distance_threshold) {
-    retro_slam::profiler::ScopedTimer timer("retro_slam.core.HausdorffDistance");
     double max_distance_threshold_sq = max_distance_threshold * max_distance_threshold;
     double max_distance = 0.0;
 
@@ -85,7 +83,6 @@ inline double ComputeHausdorffDistance(const std::vector<Eigen::Isometry3d> &sou
         }
         max_distance = std::max(max_distance, min_distance);
     }
-    timer.end();
     return std::sqrt(max_distance);
 }
 }  // namespace
@@ -113,12 +110,9 @@ RetroSLAM::RetroSLAM(const RetroSlamConfig &config)
 
 void RetroSLAM::ProcessScan(const Vector3dVector &scan_points,
                             const std::vector<double> &scan_timestamps) {
-    retro_slam::profiler::ScopedTimer timer_mapping("retro_slam.core.ProcessScan.total");
-    retro_slam::profiler::ScopedTimer timer_kiss("retro_slam.core.RegisterFrame.kiss_icp");
     const auto &[deskewed_frame, _] =
         odometry_pipeline_.RegisterFrame(scan_points, scan_timestamps);
     const Eigen::Matrix6d &hessian = odometry_pipeline_.hessian();
-    timer_kiss.end();
     const Eigen::Isometry3d scan_to_odom_pose(odometry_pipeline_.pose().matrix());
     slam_state_.localmap_T_scan = slam_state_.odom_T_localmap.inverse() * scan_to_odom_pose;
     slam_state_.submap_T_scan = slam_state_.odom_T_submap.inverse() * scan_to_odom_pose;
@@ -136,7 +130,6 @@ void RetroSLAM::ProcessScan(const Vector3dVector &scan_points,
                                  config_.local_mapper.localmap_splitting_distance;
     const bool split_submap = slam_state_.submap_T_scan.translation().norm() >
                               config_.local_mapper.submap_splitting_distance;
-    timer_mapping.end();
     if (split_submap || split_local_map) {
         FinalizeSubmap(local_trajectory_, hessians_, submap_voxel_grid_.Pointcloud());
         ResetSubmapState();
@@ -153,7 +146,6 @@ void RetroSLAM::ProcessScan(const Vector3dVector &scan_points,
 void RetroSLAM::FinalizeSubmap(const std::vector<Eigen::Isometry3d> &trajectory,
                                const std::vector<Eigen::Matrix<double, 6, 6>> &hessians,
                                const std::vector<Eigen::Vector3d> &pointcloud) {
-    retro_slam::profiler::ScopedTimer submap_timer("retro_slam.core.FinalizeSubmap");
     submap_ids_in_local_map_.emplace_back(submap_graph_.current_submap_id_);
     const Eigen::Isometry3d current_keypose = submap_graph_.CurrentKeypose();
     for (int id = 1; id < static_cast<int>(trajectory.size()); ++id) {
@@ -166,7 +158,6 @@ void RetroSLAM::FinalizeSubmap(const std::vector<Eigen::Isometry3d> &trajectory,
                              false);
     }
     submap_graph_.FinalizeSubmap(trajectory, pointcloud);
-    submap_timer.end();
 }
 
 void RetroSLAM::ResetSubmapState() {
@@ -196,9 +187,7 @@ bool RetroSLAM::ComputeClosures(const Vector3dVector &query_points,
                                 const Vector3dVector &voxel_normals) {
     slam_state_.submaps_per_localmap.emplace_back(submap_ids_in_local_map_);
     submap_ids_in_local_map_.clear();
-    profiler::ScopedTimer closure_timer("retro_slam.core.MapClosures");
     const auto loop_closure_result = closer_.Compute(query_points, voxel_means, voxel_normals);
-    closure_timer.end();
     if (loop_closure_result.success) {
         return ComputeLoopClosureConstraints(loop_closure_result.ref_id,
                                              loop_closure_result.query_id,
@@ -220,16 +209,10 @@ bool RetroSLAM::ComputeLoopClosureConstraints(const int src_localmap_id,
 
     const Eigen::Isometry3d rel_pose_constraint =
         tgt_submaps[0].keypose_ * pose_constraint * src_submaps[0].keypose_.inverse();
-    profiler::ScopedTimer find_timer(
-        "retro_slam.core.FindSubmapClosureCandidates.AppearanceLoopClosures");
     const auto candidates =
         FindSubmapClosureCandidates(src_submaps, tgt_submaps, rel_pose_constraint);
-    find_timer.end();
 
-    profiler::ScopedTimer register_submap_timer(
-        "retro_slam.core.RegisterSubmapClosures.AppearanceLoopClosures");
     const bool closure_inserted = RegisterSubmapClosures(candidates);
-    register_submap_timer.end();
 
     if (closure_inserted) {
         OptimizePoseGraph();
@@ -270,15 +253,9 @@ void RetroSLAM::ComputeGraphTraversalConstraints(const int current_localmap_quer
             const double hausdorff_distance = ComputeHausdorffDistance(
                 source_localmap_trajectory, target_localmap_trajectory, config_.odometry.max_range);
             if (hausdorff_distance <= config_.odometry.max_range) {
-                profiler::ScopedTimer find_timer(
-                    "retro_slam.core.FindSubmapClosureCandidates.RetroactiveClosures");
                 const auto candidates = FindSubmapClosureCandidates(src_submaps, tgt_submaps,
                                                                     Eigen::Isometry3d::Identity());
-                find_timer.end();
-                profiler::ScopedTimer register_submap_timer(
-                    "retro_slam.core.RegisterSubmapClosures.RetroactiveClosures");
-                closure_inserted = RegisterSubmapTraversals(candidates) || closure_inserted;
-                register_submap_timer.end();
+                closure_inserted = RegisterSubmapClosures(candidates) || closure_inserted;
             }
         }
     }
@@ -331,7 +308,6 @@ std::vector<SubmapClosureCandidate> RetroSLAM::FindSubmapClosureCandidates(
 bool RetroSLAM::RegisterSubmapClosures(const std::vector<SubmapClosureCandidate> &candidates) {
     bool closure_inserted = false;
     for (const auto &candidate : candidates) {
-        profiler::ScopedTimer register_timer("retro_slam.core.RegisterSubmapClosures");
         const auto registration_result = submap_graph_.RegisterSubmaps(
             candidate.src_id, candidate.tgt_id, candidate.initial_guess);
         if (registration_result.fitness_score > config_.loop_closer.fitness_threshold) {
@@ -341,31 +317,11 @@ bool RetroSLAM::RegisterSubmapClosures(const std::vector<SubmapClosureCandidate>
                                  registration_result.refined_pose, registration_result.hessian,
                                  false);
         }
-        register_timer.end();
-    }
-    return closure_inserted;
-}
-
-bool RetroSLAM::RegisterSubmapTraversals(const std::vector<SubmapClosureCandidate> &candidates) {
-    bool closure_inserted = false;
-    for (const auto &candidate : candidates) {
-        profiler::ScopedTimer register_timer("retro_slam.core.RegisterSubmapTraversals");
-        const auto registration_result = submap_graph_.RegisterSubmaps(
-            candidate.src_id, candidate.tgt_id, candidate.initial_guess);
-        if (registration_result.fitness_score > config_.loop_closer.fitness_threshold) {
-            closure_inserted = true;
-            loop_closures_.emplace_back(candidate.src_id, candidate.tgt_id);
-            optimizer_.AddFactor(candidate.src_scan_id, candidate.tgt_scan_id,
-                                 registration_result.refined_pose, registration_result.hessian,
-                                 false);
-        }
-        register_timer.end();
     }
     return closure_inserted;
 }
 
 void RetroSLAM::OptimizePoseGraph() {
-    profiler::ScopedTimer t_optimize("retro_slam.core.OptimizePoseGraph");
     optimizer_.Optimize();
     const auto &estimates = optimizer_.Estimates();
 
@@ -381,7 +337,6 @@ void RetroSLAM::OptimizePoseGraph() {
 
     Submap &current_submap = submap_graph_.CurrentSubmap();
     current_submap.keypose_ = estimates[current_submap.scan_id_];
-    t_optimize.end();
 }
 
 void RetroSLAM::Exit() {
