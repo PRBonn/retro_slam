@@ -34,7 +34,8 @@ retro_slam_pipeline --help
 
 This should print the following help message:
 
-![help](https://github.com/user-attachments/assets/5a6fe624-2aaf-466f-8a18-51039b794000)
+<img width="2531" height="585" alt="image" src="https://github.com/user-attachments/assets/7ab0ce96-9090-48b5-bb99-1f7485421fd7" />
+
 
 ### Config
 You can generate a default `config.yaml` by typing:
