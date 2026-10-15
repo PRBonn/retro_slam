@@ -1,0 +1,89 @@
+[build-system]
+requires = ["scikit_build_core", "pybind11"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "retro-slam"
+version = "0.0.1"
+description = "Improving Map Consistency in Graph-Based LiDAR SLAM Through Information-Aware Odometry and Retroactive Loop Closure"
+authors = [{ name = "Saurabh Gupta", email = "saurabh.gupta1002@gmail.com" }]
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+classifiers = [
+    "Intended Audience :: Developers",
+    "Operating System :: Unix",
+    "Programming Language :: C++",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+]
+keywords = ["LiDAR", "SLAM", "Mapping", "Localization"]
+dependencies = [
+    "numpy~=2.2",
+    "typer>=0.19,<0.28",
+    "pyquaternion>=0.9,<0.10",
+    "tqdm~=4.67",
+    "pyyaml~=6.0",
+    "pydantic>=2",
+    "pydantic-settings",
+    "evo",
+]
+
+[project.optional-dependencies]
+all = [
+    "rerun-sdk>=0.15.0,<0.16",
+    "rosbags>=0.10,<0.12",
+    "open3d>=0.16",
+    "ouster-sdk>=0.15.0",
+    "pyntcloud",
+    "PyYAML",
+    "trimesh",
+]
+
+[project.urls]
+Homepage = "https://github.com/PRBonn/retro_slam"
+
+[project.scripts]
+retro_slam_pipeline = "retro_slam.tools.cli:run"
+retro_slam_dump_config = "retro_slam.config.config:write_config"
+
+[tool.scikit-build]
+build-dir = "build/{wheel_tag}"
+build.verbose = false
+editable.mode = "redirect"
+editable.rebuild = true
+editable.verbose = true
+sdist.exclude = ["pybind/"]
+wheel.install-dir = "retro_slam/pybind/"
+
+[tool.scikit-build.cmake]
+version = ">=3.22"
+build-type = "Release"
+
+[tool.scikit-build.cmake.define]
+USE_SYSTEM_EIGEN3 = "ON"
+USE_SYSTEM_SOPHUS = "ON"
+USE_SYSTEM_G2O = "ON"
+
+[tool.black]
+line-length = 100
+
+[tool.isort]
+profile = "black"
+
+[tool.pylint.format]
+line-length = "100"
+target-version = "py310"
+
+[tool.cibuildwheel]
+archs = ["auto64"]
+skip = ["*-musllinux*", "pp*", "cp38-*", "cp39-*"]
+manylinux-x86_64-image = "manylinux_2_28"
+
+[tool.cibuildwheel.macos]
+environment = "MACOSX_DEPLOYMENT_TARGET=11.0"
+archs = ["auto64", "arm64"]

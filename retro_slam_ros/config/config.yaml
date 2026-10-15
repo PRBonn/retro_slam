@@ -1,0 +1,45 @@
+# NOTE: Please note that this is just an example of the advanced configuration for the KISS-ICP
+# pipeline and it's not really meant to use for any particular dataset, is just to expose other
+# options that are disabled by default
+
+/**:
+  ros__parameters:
+    ####    /!\ If you set these ROS-related parameters in the file, they will overwrite the corresponding launch arguments   ####
+
+    # global_map_frame: "lidar_map"
+    # lidar_odom_frame: "lidar_odom"
+    # base_frame: "base_link"
+
+    ####    Core parameters    ####
+    odometry:
+      data:
+        deskew: True
+        max_range: 100.0
+        min_range: 0.0
+
+      mapping:
+        # voxel_size: 1.0 # <- optional, default = max_range / 100.0
+        max_points_per_voxel: 20
+
+      adaptive_threshold:
+        initial_threshold: 2.0
+        min_motion_th: 0.1
+
+      registration:
+        max_num_iterations: 500 # <- optional
+        convergence_criterion: 0.0001 # <- optional
+        max_num_threads: 4 # <- optional, 0 means automatic
+
+    local_mapper:
+      submap_voxel_size: 0.5
+      localmap_voxel_size: 0.5
+      submap_splitting_distance: 25.0
+      localmap_splitting_distance: 100.0
+
+    loop_closer:
+      inliers_threshold: 5
+      fitness_threshold: 0.25
+
+    pose_graph_optimizer:
+      verbose: false
+      max_iterations: 10

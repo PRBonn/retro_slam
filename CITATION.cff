@@ -1,0 +1,18 @@
+cff-version: 1.2.1
+preferred-citation:
+  title: "Improving Map Consistency in Graph-Based LiDAR SLAM Through Information-Aware Odometry and Retroactive Loop Closure"
+  doi: "10.48550/arXiv.2607.13516"
+  year: "2026"
+  type: article
+  journal: "arXiv"
+  url: https://arxiv.org/pdf/2607.13516
+  codeurl: https://github.com/PRBonn/retro_slam
+  authors:
+    - family-names: Gupta
+      given-names: Saurabh
+    - family-names: Trekel
+      given-names: Niklas
+    - family-names: Wiesmann
+      given-names: Louis
+    - family-names: Stachniss
+      given-names: Cyrill
