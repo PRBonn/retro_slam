@@ -24,7 +24,7 @@
 -->
 <package format="3">
   <name>retro_slam_ros</name>
-  <version>1.0.0</version>
+  <version>0.0.1</version>
   <description>ROS2 package for Retro-SLAM</description>
   <url type="repository">https://github.com/PRBonn/retro-slam</url>
   <author email="saurabh.gupta1002@gmail.com">Saurabh Gupta</author>
