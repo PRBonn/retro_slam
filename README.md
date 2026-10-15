@@ -14,7 +14,7 @@
   <br />
   <br />
 
-[Retro-SLAM](https://www.ipb.uni-bonn.de/pdfs/gupta2026arxiv.pdf): Improving Map Consistency in Graph-Based LiDAR SLAM Through Information-Aware Odometry and Retroactive Loop Closure
+Retro-SLAM: Improving Map Consistency in Graph-Based LiDAR SLAM Through Information-Aware Odometry and Retroactive Loop Closure
 
 </div>
 
@@ -45,20 +45,23 @@ retro_slam_dump_config
 
 which will generate a `retro_slam.yaml` file. Now, you can modify the parameters and pass the file to the `--config` option when running the `retro_slam_pipeline`.
 
-Suggestion for indoor applications:
-1. Reduce the `odometry.preprocessing.max_range` to 50.0, this will automatically reduce the `voxel_size` to 0.5.
-2. Reduce the `local_mapper.splitting_distance` to a suitable distance based on the scale of the indoor environment.
-
 ### Install Python API (developer mode)
 For development purposes:
 
 ```
-sudo apt install git python3-pip libeigen3-dev libsuitesparse-dev
 python3 -m pip install --upgrade pip
 git clone https://github.com/PRBonn/retro-slam.git
 cd retro-slam
 make editable
 ```
+
+### ROS2 support
+
+```sh
+cd ~/ros2_ws/src/ && git clone https://github.com/PRBonn/retro_slam && cd ~/ros2_ws/ && colcon build --packages-select retro_slam_ros
+```
+For more detailed instructions on the ROS wrapper, please visit this [README](retro_slam_ros/README.md)
+
 
 ## Citation
 If you use this library for any academic work, please cite our original paper:
@@ -73,7 +76,12 @@ If you use this library for any academic work, please cite our original paper:
 }
 ```
 
+## Note
+1. We use a fork of [KISS-ICP](https://github.com/saurabh1002/kiss-icp) for LiDAR odometry and the uncertainty estimation proposed in the Retro-SLAM manuscript is implemented in this fork as well.
+2. We use the [MapClosures](https://github.com/PRBonn/MapClosures) repository for local-map-level loop closure detection in our work.
+
 ## Acknowledgements
+
 This project builds on top of [KISS-SLAM](https://github.com/PRBonn/kiss-slam).
 
 ## Contributing
