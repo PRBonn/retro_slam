@@ -36,11 +36,10 @@
 #include "utils.hpp"
 
 // ROS 2 headers
-#include <message_filters/subscriber.h>
-#include <message_filters/synchronizer.h>
-
 #include <example_interfaces/srv/trigger.hpp>
 #include <geometry_msgs/msg/transform_stamped.hpp>
+#include <message_filters/subscriber.hpp>
+#include <message_filters/synchronizer.hpp>
 #include <nav_msgs/msg/odometry.hpp>
 #include <rclcpp/qos.hpp>
 #include <rclcpp/rclcpp.hpp>
