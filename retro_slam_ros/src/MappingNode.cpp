@@ -205,15 +205,11 @@ void MappingNode::InitializeServices() {
     const auto service_callback_group =
         create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
     global_map_saver_service_ = create_service<example_interfaces::srv::Trigger>(
-        "save_global_map",
-        std::bind(&MappingNode::GlobalMapServiceServer, this, std::placeholders::_1,
-                  std::placeholders::_2),
-        rclcpp::ServicesQoS());
+        "save_global_map", std::bind(&MappingNode::GlobalMapServiceServer, this,
+                                     std::placeholders::_1, std::placeholders::_2));
     exit_service_ = create_service<example_interfaces::srv::Trigger>(
-        "clean_exit_slam",
-        std::bind(&MappingNode::ExitServiceServer, this, std::placeholders::_1,
-                  std::placeholders::_2),
-        rclcpp::ServicesQoS());
+        "clean_exit_slam", std::bind(&MappingNode::ExitServiceServer, this, std::placeholders::_1,
+                                     std::placeholders::_2));
 }
 
 void MappingNode::ResetSubmapState() {
