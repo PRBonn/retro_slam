@@ -37,15 +37,14 @@
 #include "retro_slam/voxel_map.hpp"
 
 // ROS 2
-#include <message_filters/subscriber.h>
-#include <message_filters/sync_policies/exact_time.h>
-#include <message_filters/synchronizer.h>
-#include <tf2_ros/transform_broadcaster.h>
-
 #include <example_interfaces/srv/trigger.hpp>
+#include <message_filters/subscriber.hpp>
+#include <message_filters/sync_policies/exact_time.hpp>
+#include <message_filters/synchronizer.hpp>
 #include <nav_msgs/msg/odometry.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
+#include <tf2_ros/transform_broadcaster.hpp>
 
 namespace retro_slam_ros {
 using NodeSyncPolicy = message_filters::sync_policies::ExactTime<nav_msgs::msg::Odometry,
