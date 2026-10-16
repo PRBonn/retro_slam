@@ -36,12 +36,10 @@
 #include "utils.hpp"
 
 // ROS 2 headers
-#include <message_filters/subscriber.h>
-#include <message_filters/synchronizer.h>
-#include <rmw/qos_profiles.h>
-
 #include <example_interfaces/srv/trigger.hpp>
 #include <geometry_msgs/msg/transform_stamped.hpp>
+#include <message_filters/subscriber.hpp>
+#include <message_filters/synchronizer.hpp>
 #include <nav_msgs/msg/odometry.hpp>
 #include <rclcpp/qos.hpp>
 #include <rclcpp/rclcpp.hpp>
@@ -207,15 +205,11 @@ void MappingNode::InitializeServices() {
     const auto service_callback_group =
         create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
     global_map_saver_service_ = create_service<example_interfaces::srv::Trigger>(
-        "save_global_map",
-        std::bind(&MappingNode::GlobalMapServiceServer, this, std::placeholders::_1,
-                  std::placeholders::_2),
-        rmw_qos_profile_default);
+        "save_global_map", std::bind(&MappingNode::GlobalMapServiceServer, this,
+                                     std::placeholders::_1, std::placeholders::_2));
     exit_service_ = create_service<example_interfaces::srv::Trigger>(
-        "clean_exit_slam",
-        std::bind(&MappingNode::ExitServiceServer, this, std::placeholders::_1,
-                  std::placeholders::_2),
-        rmw_qos_profile_default);
+        "clean_exit_slam", std::bind(&MappingNode::ExitServiceServer, this, std::placeholders::_1,
+                                     std::placeholders::_2));
 }
 
 void MappingNode::ResetSubmapState() {

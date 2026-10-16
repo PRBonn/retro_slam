@@ -44,7 +44,6 @@ find_package(ament_cmake REQUIRED)
 
 # Core ROS
 find_package(rclcpp REQUIRED)
-find_package(rclcpp_components REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2_eigen REQUIRED)
 find_package(message_filters REQUIRED)
@@ -63,24 +62,25 @@ function(configure_target target)
 endfunction()
 
 set(COMMON_ROS_DEPS
-    rclcpp
-    tf2_ros
-    tf2_eigen
-    std_msgs
-    nav_msgs
-    sensor_msgs
-    geometry_msgs)
+    rclcpp::rclcpp
+    tf2_ros::tf2_ros
+    tf2_eigen::tf2_eigen
+    std_msgs::std_msgs
+    nav_msgs::nav_msgs
+    sensor_msgs::sensor_msgs
+    geometry_msgs::geometry_msgs)
 
 # ROS 2 node
 add_executable(odometry_node ${CMAKE_CURRENT_SOURCE_DIR}/src/OdometryNode.cpp)
 configure_target(odometry_node)
-ament_target_dependencies(odometry_node ${COMMON_ROS_DEPS})
-target_link_libraries(odometry_node kiss_icp_core kiss_icp_pipeline retro_slam_core)
+target_link_libraries(odometry_node PUBLIC ${COMMON_ROS_DEPS})
+target_link_libraries(odometry_node PUBLIC kiss_icp_core kiss_icp_pipeline retro_slam_core)
 
 add_executable(mapping_node ${CMAKE_CURRENT_SOURCE_DIR}/src/MappingNode.cpp)
 configure_target(mapping_node)
-ament_target_dependencies(mapping_node ${COMMON_ROS_DEPS} rclcpp_components message_filters example_interfaces)
-target_link_libraries(mapping_node retro_slam_core)
+target_link_libraries(mapping_node PUBLIC ${COMMON_ROS_DEPS} message_filters::message_filters
+                                          example_interfaces::example_interfaces)
+target_link_libraries(mapping_node PUBLIC retro_slam_core)
 
 include(GNUInstallDirs)
 install(TARGETS odometry_node mapping_node LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
