@@ -65,9 +65,9 @@ version = ">=3.22"
 build-type = "Release"
 
 [tool.scikit-build.cmake.define]
-USE_SYSTEM_EIGEN3 = "ON"
-USE_SYSTEM_SOPHUS = "ON"
-USE_SYSTEM_G2O = "ON"
+USE_SYSTEM_EIGEN3 = "OFF"
+USE_SYSTEM_SOPHUS = "OFF"
+USE_SYSTEM_G2O = "OFF"
 
 [tool.black]
 line-length = 100
