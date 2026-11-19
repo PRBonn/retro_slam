@@ -12,11 +12,11 @@ jobs:
     name: Build source distribution
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v7
 
       - name: Build sdist
         run: pipx run build --sdist ${{github.workspace}}/python/
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           path: dist/*.tar.gz
 
@@ -28,11 +28,11 @@ jobs:
         os: [ubuntu-24.04, macos-15]
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v7
 
       - name: Build test wheels (only PRs)
         if: github.event_name != 'release'
-        uses: pypa/cibuildwheel@v2.22.0
+        uses: pypa/cibuildwheel@v4.3.5
         env: # build 1 build per platform just to make sure we can do it later when releasing
           CIBW_BUILD: "cp312-*"
         with:
@@ -40,11 +40,11 @@ jobs:
 
       - name: Build all wheels
         if: github.event_name == 'release'
-        uses: pypa/cibuildwheel@v2.22.0
+        uses: pypa/cibuildwheel@v4.3.5
         with:
           package-dir: ${{github.workspace}}/python/
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: artifact-${{ matrix.os }}
           path: ./wheelhouse/*.whl
@@ -54,7 +54,7 @@ jobs:
     needs: [cibuildwheel, build_sdist]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: artifact*
           path: dist
