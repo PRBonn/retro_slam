@@ -63,12 +63,12 @@ endfunction()
 
 set(COMMON_ROS_DEPS
     rclcpp::rclcpp
-    tf2_ros::tf2_ros
-    tf2_eigen::tf2_eigen
-    std_msgs::std_msgs
-    nav_msgs::nav_msgs
-    sensor_msgs::sensor_msgs
-    geometry_msgs::geometry_msgs)
+    ${tf2_ros_TARGETS}
+    ${tf2_eigen_TARGETS}
+    ${std_msgs_TARGETS}
+    ${nav_msgs_TARGETS}
+    ${sensor_msgs_TARGETS}
+    ${geometry_msgs_TARGETS})
 
 # ROS 2 node
 add_executable(odometry_node ${CMAKE_CURRENT_SOURCE_DIR}/src/OdometryNode.cpp)
@@ -78,8 +78,7 @@ target_link_libraries(odometry_node PUBLIC kiss_icp_core kiss_icp_pipeline retro
 
 add_executable(mapping_node ${CMAKE_CURRENT_SOURCE_DIR}/src/MappingNode.cpp)
 configure_target(mapping_node)
-target_link_libraries(mapping_node PUBLIC ${COMMON_ROS_DEPS} message_filters::message_filters
-                                          example_interfaces::example_interfaces)
+target_link_libraries(mapping_node PUBLIC ${COMMON_ROS_DEPS} ${message_filters_TARGETS} ${example_interfaces_TARGETS})
 target_link_libraries(mapping_node PUBLIC retro_slam_core)
 
 include(GNUInstallDirs)
